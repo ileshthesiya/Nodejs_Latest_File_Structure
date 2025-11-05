@@ -8,12 +8,5 @@ router.post("/register", userController.register);
 router.post("/login", userController.login);
 router.post("/userDetails", jwtValidation, userController.userDetails);
 router.post("/getAllUser", jwtValidation, userController.getAllUser);
-router.post("/subscribeToPlan", jwtValidation, userController.subscribeToPlan);
-router.post("/getUserFeatures", jwtValidation, userController.getUserFeatures);
-router.post(
-  "/getSingleSubscription",
-  jwtValidation,
-  userController.getSingleSubscription
-);
 
 module.exports = router;

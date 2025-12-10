@@ -108,3 +108,70 @@ exports.userDetails = async (req, res) => {
       .send({ message: "Something went to wong in get all user" });
   }
 };
+
+exports.getAllUsersWith = async (req, res) => {
+  try {
+    const { loginUser } = req;
+    let { page = 1, limit = 10, search = "" } = req.query;
+
+    page = Number(page);
+    limit = Number(limit);
+
+    const skip = (page - 1) * limit;
+    let matchQuery = {};
+
+    if (search) {
+      matchQuery = {
+        $or: [
+          { name:  { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } }
+        ]
+      };
+    }
+
+    const result = await User.aggregate([
+      { $match: matchQuery },
+
+      {
+        $project: {
+          password: 0,
+          role: 0,
+          __v: 0,
+        }
+      },
+
+      {
+        $facet: {
+          metadata: [
+            { $count: "totalUsers" }
+          ],
+          users: [
+            { $sort: { createdAt: -1 } },
+            { $skip: skip },
+            { $limit: limit }
+          ]
+        }
+      }
+    ]);
+
+    const totalUsers = result[0]?.metadata[0]?.totalUsers || 0;
+    const users = result[0]?.users || [];
+
+    return res.status(200).send({
+      message: "Users fetched successfully",
+      page,
+      limit,
+      totalUsers,
+      totalPages: Math.ceil(totalUsers / limit),
+      data: users
+    });
+
+  } catch (err) {
+    console.log("Error in getAllUsersWithAgg:", err);
+    return res.status(500).send({
+      message: "Something went wrong while fetching users",
+      error: err.message
+    });
+  }
+};
+
